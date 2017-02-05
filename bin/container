@@ -190,9 +190,9 @@ status ()
     local full="${2:-0}"
     local json="${3:-0}"
 
-    local containerStatus=$(getContainerStatus "$containerName" "$full" "$json")
+    local containerInfo=$(getDockerContainerInfo "$containerName" "$full" "$json")
 
-    echo -e "$containerStatus"
+    echo -e "$containerInfo"
 }
 
 # start function

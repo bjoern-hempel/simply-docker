@@ -3,13 +3,13 @@
 
 
 # ------------
-# Get docker status
+# Get container status
 #
 # @author  Björn Hempel
 # @version 1.0
 # @date    2017-02-05
 # ------------ 
-getDockerStatus ()
+getDockerContainerStatus ()
 {
     local containerName="$1"
 
@@ -26,13 +26,13 @@ getDockerStatus ()
 
 
 # ------------
-# Get docker id
+# Get container id
 #
 # @author  Björn Hempel
 # @version 1.0
 # @date    2017-02-05
 # ------------ 
-getDockerId ()
+getDockerContainerId ()
 {
     local containerName="$1"
 
@@ -50,13 +50,13 @@ getDockerId ()
 
 
 # ------------
-# Get docker name
+# Get container name
 #
 # @author  Björn Hempel
 # @version 1.0
 # @date    2017-02-05
 # ------------ 
-getDockerName ()
+getDockerContainerName ()
 {
     local containerName="$1"
 
@@ -72,13 +72,13 @@ getDockerName ()
 
 
 # ------------
-# Get docker ip
+# Get container ip
 #
 # @author  Björn Hempel
 # @version 1.0
 # @date    2017-02-05
 # ------------ 
-getDockerIp ()
+getDockerContainerIp ()
 {
     local containerName="$1"
 
@@ -94,13 +94,13 @@ getDockerIp ()
 
 
 # ------------
-# Get docker created at
+# Get container created at
 #
 # @author  Björn Hempel
 # @version 1.0
 # @date    2017-02-05
 # ------------ 
-getDockerCreatedAt ()
+getDockerContainerCreatedAt ()
 {
     local containerName="$1"
     local format="${2:-%d %B of %Y at %H:%M and %S seconds}"
@@ -125,7 +125,7 @@ getDockerCreatedAt ()
 # @version 1.0
 # @date    2017-02-05
 # ------------ 
-getDockerStartedAt ()
+getDockerContainerStartedAt ()
 {
     local containerName="$1"
     local format="${2:-%d %B of %Y at %H:%M and %S seconds}"
@@ -150,7 +150,7 @@ getDockerStartedAt ()
 # @version 1.0
 # @date    2017-02-05
 # ------------ 
-getDockerStartScript ()
+getDockerContainerStartScript ()
 {
     local containerName="$1"
 
@@ -186,7 +186,7 @@ getDockerStartScript ()
 # @version 1.0
 # @date    2017-02-05
 # ------------ 
-getDockerPorts ()
+getDockerContainerPorts ()
 {
     local containerName="$1"
 
@@ -204,7 +204,7 @@ getDockerPorts ()
 # @version 1.0
 # @date    2017-02-05
 # ------------
-getDockerVolumes ()
+getDockerContainerVolumes ()
 {
     local containerName="$1"
 
@@ -223,7 +223,7 @@ getDockerVolumes ()
 # @version 1.0
 # @date    2017-02-05
 # ------------
-getContainerStatus ()
+getDockerContainerInfo ()
 {
     local containerName="$1"
     local full="${2:-0}"
@@ -233,7 +233,7 @@ getContainerStatus ()
     [ "$json" == "0" ] && json=false || json=true
 
     # get status (created, restarting, running, paused, exited, dead)
-    local statusContainer=$(getDockerStatus "$containerName")
+    local statusContainer=$(getDockerContainerStatus "$containerName")
 
     # if container is not existent, full is not available
     [ "$statusContainer" == "nonexistent" ] && full=false
@@ -251,16 +251,16 @@ getContainerStatus ()
     fi
 
     # build the full output
-    local                 id=$(getDockerId          "$containerName")
-    local               name=$(getDockerName        "$containerName")
-    local                 ip=$(getDockerIp          "$containerName")
-    local          createdAt=$(getDockerStartedAt   "$containerName")
-    local createdAtTimestamp=$(getDockerStartedAt   "$containerName" "%s")
-    local          startedAt=$(getDockerCreatedAt   "$containerName")
-    local startedAtTimestamp=$(getDockerCreatedAt   "$containerName" "%s")
-    local        startScript=$(getDockerStartScript "$containerName")
-    local              ports=$(getDockerPorts       "$containerName")
-    local            volumes=$(getDockerVolumes     "$containerName")
+    local                 id=$(getDockerContainerId          "$containerName")
+    local               name=$(getDockerContainerName        "$containerName")
+    local                 ip=$(getDockerContainerIp          "$containerName")
+    local          createdAt=$(getDockerContainerStartedAt   "$containerName")
+    local createdAtTimestamp=$(getDockerContainerStartedAt   "$containerName" "%s")
+    local          startedAt=$(getDockerContainerCreatedAt   "$containerName")
+    local startedAtTimestamp=$(getDockerContainerCreatedAt   "$containerName" "%s")
+    local        startScript=$(getDockerContainerStartScript "$containerName")
+    local              ports=$(getDockerContainerPorts       "$containerName")
+    local            volumes=$(getDockerContainerVolumes     "$containerName")
 
     # print full json status of container
     if $json; then
