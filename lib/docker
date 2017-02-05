@@ -140,8 +140,11 @@ createContainer ()
         done
     fi
 
-    # check parameters
+    # declare parameters and add name first
     declare -A parameters
+    parameters[name]="$containerName"
+
+    # check parameters
     if [ -d "$parametersFolder" ]; then
         for fileSource in $(find "$parametersFolder" -type l); do
             local parameterFile=$(readlink -f "$fileSource")
@@ -152,6 +155,7 @@ createContainer ()
         done
     fi
 
+    # build docker run command
     local command="docker run -dit"
 
     # add ports to command
@@ -191,9 +195,6 @@ createContainer ()
         command="$command --link $linkContainerName:$linkContainerName"
     done
 
-    # add containerName
-    command="$command --name $containerName"
-
     # add image parameter
     command="$command $imageName"
 
@@ -202,9 +203,6 @@ createContainer ()
         echo "$command"
         exit
     else
-        echo 'do it'
-        exit
-
         # eval command
         local resultCommand=$(eval "$command")
     fi
