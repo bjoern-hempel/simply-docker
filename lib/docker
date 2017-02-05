@@ -3,6 +3,215 @@
 
 
 # ------------
+# Get docker status
+#
+# @author  Björn Hempel
+# @version 1.0
+# @date    2017-02-05
+# ------------ 
+getDockerStatus ()
+{
+    local containerName="$1"
+
+    # get status (created, restarting, running, paused, exited, dead)
+    local statusContainer=$(docker inspect -f '{{ .State.Status }}' "$containerName" 2>/dev/null)
+
+    if [ "$statusContainer" == "" ]; then
+        statusContainer="nonexistent"
+    fi
+
+    echo "$statusContainer"
+}
+
+
+
+# ------------
+# Get docker id
+#
+# @author  Björn Hempel
+# @version 1.0
+# @date    2017-02-05
+# ------------ 
+getDockerId ()
+{
+    local containerName="$1"
+
+    local id=$(docker inspect -f '{{ .ID }}' "$containerName" 2>/dev/null)
+
+    if [ "$id" == "" ]; then
+        id="none"
+    else
+        id="${id:0:12}"
+    fi
+
+    echo "$id"
+}
+
+
+
+# ------------
+# Get docker name
+#
+# @author  Björn Hempel
+# @version 1.0
+# @date    2017-02-05
+# ------------ 
+getDockerName ()
+{
+    local containerName="$1"
+
+    local name=$(docker inspect -f '{{ .Name }}' "$containerName" 2>/dev/null)
+
+    if [ "$name" == "" ]; then
+        name="none"
+    fi
+
+    echo "${name/\//}"
+}
+
+
+
+# ------------
+# Get docker ip
+#
+# @author  Björn Hempel
+# @version 1.0
+# @date    2017-02-05
+# ------------ 
+getDockerIp ()
+{
+    local containerName="$1"
+
+    local ip=$(docker inspect -f '{{ .NetworkSettings.IPAddress }}' "$containerName" 2>/dev/null)
+
+    if [ "$ip" == "" ]; then
+        ip="0.0.0.0"
+    fi
+
+    echo $ip
+}
+
+
+
+# ------------
+# Get docker created at
+#
+# @author  Björn Hempel
+# @version 1.0
+# @date    2017-02-05
+# ------------ 
+getDockerCreatedAt ()
+{
+    local containerName="$1"
+    local format="${2:-%d %B of %Y at %H:%M and %S seconds}"
+
+    local createdAt=$(docker inspect -f '{{ .Created }}' "$containerName" 2>/dev/null)
+
+    if [ "$createdAt" == "" ]; then
+        createdAt="none"
+    else
+        createdAt=$(date --date="$createdAt" "+$format")
+    fi
+
+    echo $createdAt
+}
+
+
+
+# ------------
+# Get docker started at
+#      
+# @author  Björn Hempel
+# @version 1.0
+# @date    2017-02-05
+# ------------ 
+getDockerStartedAt ()
+{
+    local containerName="$1"
+    local format="${2:-%d %B of %Y at %H:%M and %S seconds}"
+
+    local startedAt=$(docker inspect -f '{{ .State.StartedAt }}' "$containerName" 2>/dev/null)
+
+    if [ "$startedAt" == "" ]; then
+        startedAt="none"
+    else
+        startedAt=$(date --date="$startedAt" "+$format")
+    fi
+
+    echo $startedAt
+}
+
+
+
+# ------------
+# Get docker start script
+#      
+# @author  Björn Hempel
+# @version 1.0
+# @date    2017-02-05
+# ------------ 
+getDockerStartScript ()
+{
+    local containerName="$1"
+
+    local startScript=$(docker inspect -f '{{ .Path }}' "$containerName" 2>/dev/null)
+
+    if [ "$startScript" == "" ]; then
+        startScript="none"
+    fi
+
+    echo $startScript
+}
+
+
+
+# ------------
+# Get docker ports
+#
+# returns:
+# --------
+# [hostPort1] [dockerPort1]\n
+# [hostPort2] [dockerPort2]\n
+# [hostPort3] [dockerPort3]
+#
+# usage:
+# ------
+# local ports=$(getDockerPorts "$containerName")
+# while read -r port; do
+#     local port=($port)
+#     echo "host-port: ${port[0]} container-port: ${port[1]}"
+# done <<< "$ports"
+#
+# @author  Björn Hempel
+# @version 1.0
+# @date    2017-02-05
+# ------------ 
+getDockerPorts ()
+{
+    local ports=$(docker inspect -f '{{range $p, $conf := .HostConfig.PortBindings}}{{(index $conf 0).HostPort}} {{$p}}'$'\n''{{end}}' "$containerName" 2>/dev/null)
+
+    echo -en "$ports"
+}
+
+
+
+# ------------
+# Get docker volume mounts
+#
+# @author  Björn Hempel
+# @version 1.0
+# @date    2017-02-05
+# ------------
+getDockerVolumes ()
+{
+    local volumes=$(docker inspect -f '{{range .HostConfig.Binds}}{{.}}'$'\n''{{end}}' "$containerName" 2>/dev/null)
+
+    echo -en "${volumes//:/ }"
+}
+
+
+
+# ------------
 # Check if docker image exists
 #
 # @author  Björn Hempel
@@ -29,7 +238,8 @@ dockerImageExists ()
 # @version 1.0
 # @date    2017-01-22
 # ------------
-dockerContainerIsRunning() {
+dockerContainerIsRunning()
+{
   if [[ "$(docker inspect -f {{.State.Running}} $1 2> /dev/null)" == "true" ]]; then
     return 0
   else
@@ -46,7 +256,8 @@ dockerContainerIsRunning() {
 # @version 1.0
 # @date    2017-01-22
 # ------------
-dockerContainerExists() {
+dockerContainerExists()
+{
   if [[ "$(docker inspect -f {{.State.Running}} $1 2> /dev/null)" == "" ]]; then
     return 1
   else
