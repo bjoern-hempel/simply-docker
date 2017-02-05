@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# jsawk
+# apt install libmozjs-24-bin
+
 # some vars
        pathRoot="$(dirname "$(readlink -f "$0")")"
         pathLib="$pathRoot/../lib"
@@ -14,6 +17,7 @@ source "$pathLib/all"
 # initial values
 DEBUG=false
  FULL=false
+ JSON=false
 
 # declare parameter list array
 PARAMETERS=()
@@ -41,6 +45,17 @@ while [[ $# > 0 ]]; do
     -f=*|--full=*)
       FULL="${1#*=}"
       [ "$FULL" = "0" ] && FULL=false || FULL=true
+    ;;
+
+    #
+    # check json parameter
+    #
+    -j|--json)
+      JSON=true
+    ;;
+    -j=*|--json=*)
+      JSON="${1#*=}"
+      [ "$JSON" = "0" ] && JSON=false || JSON=true
     ;;
 
     #
@@ -172,75 +187,12 @@ restart ()
 status ()
 {
     local containerName="$1"
+    local full="${2:-0}"
+    local json="${3:-0}"
 
-    # get status (created, restarting, running, paused, exited, dead)
-    local statusContainer=$(getDockerStatus "$containerName")
+    local containerStatus=$(getContainerStatus "$containerName" "$full" "$json")
 
-    # simply return the status
-    if ! $FULL; then
-        echo "$statusContainer" && return 0
-    fi
-
-    # container not available
-    if [ "$statusContainer" == "nonexistent" ]; then
-        echo "{"
-        echo "    \"status\": \"$statusContainer\""
-        echo "}"
-        return 0
-    fi
-
-    local                 id=$(getDockerId          "$containerName")
-    local               name=$(getDockerName        "$containerName")
-    local                 ip=$(getDockerIp          "$containerName")
-    local          createdAt=$(getDockerStartedAt   "$containerName")
-    local createdAtTimestamp=$(getDockerStartedAt   "$containerName" "%s")
-    local          startedAt=$(getDockerCreatedAt   "$containerName")
-    local startedAtTimestamp=$(getDockerCreatedAt   "$containerName" "%s")
-    local        startScript=$(getDockerStartScript "$containerName")
-    local              ports=$(getDockerPorts       "$containerName")
-    local            volumes=$(getDockerVolumes     "$containerName")
-
-    # print full json status of container
-    echo    "{"
-    echo    "    \"container-name\":       \"$name\","
-    echo    "    \"container-id\":         \"$id\","
-    echo    "    \"status\":               \"$statusContainer\","
-    echo    "    \"created-at\":           \"$createdAt\","
-    echo    "    \"created-at-timestamp\": \"$createdAtTimestamp\","
-    echo    "    \"started-at\":           \"$startedAt\","
-    echo    "    \"started-at-timestamp\": \"$startedAtTimestamp\","
-    echo    "    \"ip-address\":           \"$ip\","
-
-    echo -n "    \"used-ports\":           {"
-    if [ "$ports" != "" ]; then
-        local firstPort=true
-        while read -r port; do
-            local port=($port)
-            $firstPort && echo "" || echo ","
-            echo -n "                                \"${port[0]}\": \"${port[1]}\""
-            firstPort=false
-        done <<< "$ports"
-        echo -e "\n                            },"
-    else
-        echo "},"
-    fi
-
-    echo -n "    \"used-volumes\":         {"
-    if [ "$volumes" != "" ]; then
-        local firstVolume=true
-        while read -r volume; do
-            local volume=($volume)
-            $firstVolume && echo "" || echo ","
-            echo -n "                                \"${volume[0]}\": \"${volume[1]}\""
-            firstVolume=false
-        done <<< "$volumes"
-        echo -e "\n                            },"
-    else
-        echo "},"
-    fi
-    echo "    \"start-script\":         \"$startScript\","
-    echo "    \"login-command\":        \"$ docker exec -it $name bash\""
-    echo "}"
+    echo -e "$containerStatus"
 }
 
 # start function
@@ -389,7 +341,10 @@ case $action in
         ;;
 
     status)
-        status "$containerName"
+        $FULL && fullParameter=1 || fullParameter=0
+        $JSON && jsonParameter=1 || jsonParameter=0
+
+        status "$containerName" "$fullParameter" "$jsonParameter"
         ;;
 
     stop)

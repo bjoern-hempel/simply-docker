@@ -188,6 +188,8 @@ getDockerStartScript ()
 # ------------ 
 getDockerPorts ()
 {
+    local containerName="$1"
+
     local ports=$(docker inspect -f '{{range $p, $conf := .HostConfig.PortBindings}}{{(index $conf 0).HostPort}} {{$p}}'$'\n''{{end}}' "$containerName" 2>/dev/null)
 
     echo -en "$ports"
@@ -204,9 +206,142 @@ getDockerPorts ()
 # ------------
 getDockerVolumes ()
 {
+    local containerName="$1"
+
     local volumes=$(docker inspect -f '{{range .HostConfig.Binds}}{{.}}'$'\n''{{end}}' "$containerName" 2>/dev/null)
 
     echo -en "${volumes//:/ }"
+}
+
+
+
+
+# ------------
+# Returns the container status
+#
+# @author  Björn Hempel
+# @version 1.0
+# @date    2017-02-05
+# ------------
+getContainerStatus ()
+{
+    local containerName="$1"
+    local full="${2:-0}"
+    local json="${3:-0}"
+
+    [ "$full" == "0" ] && full=false || full=true
+    [ "$json" == "0" ] && json=false || json=true
+
+    # get status (created, restarting, running, paused, exited, dead)
+    local statusContainer=$(getDockerStatus "$containerName")
+
+    # if container is not existent, full is not available
+    [ "$statusContainer" == "nonexistent" ] && full=false
+
+    # simply return the status
+    if ! $full; then
+        if $json; then
+            echo "{"
+            echo "    \"status\": \"$statusContainer\""
+            echo "}"
+            return 0
+        else
+            echo "$statusContainer" && return 0
+        fi
+    fi
+
+    # build the full output
+    local                 id=$(getDockerId          "$containerName")
+    local               name=$(getDockerName        "$containerName")
+    local                 ip=$(getDockerIp          "$containerName")
+    local          createdAt=$(getDockerStartedAt   "$containerName")
+    local createdAtTimestamp=$(getDockerStartedAt   "$containerName" "%s")
+    local          startedAt=$(getDockerCreatedAt   "$containerName")
+    local startedAtTimestamp=$(getDockerCreatedAt   "$containerName" "%s")
+    local        startScript=$(getDockerStartScript "$containerName")
+    local              ports=$(getDockerPorts       "$containerName")
+    local            volumes=$(getDockerVolumes     "$containerName")
+
+    # print full json status of container
+    if $json; then
+        echo    "{"
+        echo    "    \"container-name\":       \"$name\","
+        echo    "    \"container-id\":         \"$id\","
+        echo    "    \"status\":               \"$statusContainer\","
+        echo    "    \"created-at\":           \"$createdAt\","
+        echo    "    \"created-at-timestamp\": \"$createdAtTimestamp\","
+        echo    "    \"started-at\":           \"$startedAt\","
+        echo    "    \"started-at-timestamp\": \"$startedAtTimestamp\","
+        echo    "    \"ip-address\":           \"$ip\","
+
+        echo -n "    \"used-ports\":           {"
+        if [ "$ports" != "" ]; then
+            local firstPort=true
+            while read -r port; do
+                local port=($port)
+                $firstPort && echo "" || echo ","
+                echo -n "                                \"${port[0]}\": \"${port[1]}\""
+                firstPort=false
+            done <<< "$ports"
+            echo -e "\n                            },"
+        else
+            echo "},"
+        fi
+
+        echo -n "    \"used-volumes\":         {"
+        if [ "$volumes" != "" ]; then
+            local firstVolume=true
+            while read -r volume; do
+                local volume=($volume)
+                $firstVolume && echo "" || echo ","
+                echo -n "                                \"${volume[0]}\": \"${volume[1]}\""
+                firstVolume=false
+            done <<< "$volumes"
+            echo -e "\n                            },"
+        else
+            echo "},"
+        fi
+        echo "    \"start-script\":         \"$startScript\","
+        echo "    \"login-command\":        \"$ docker exec -it $name bash\""
+        echo "}"
+        return 0
+    fi
+
+    # print full output
+             output="container name: $name"
+    output="$output\ncontainer id:   $id"
+    output="$output\nstatus:         $statusContainer"
+    output="$output\ncreated at:     $createdAt"
+    output="$output\nstarted at:     $startedAt"
+    output="$output\nip address:     $ip"
+
+    output="$output\nused ports:     "
+    if [ "$ports" != "" ]; then
+        local firstPort=true
+        while read -r port; do
+            local port=($port)
+            ! $firstPort && output="$output\n                "
+            output="$output- ${port[0]} -> ${port[1]}"
+            firstPort=false
+        done <<< "$ports"
+    else
+        output="${output}no port is used"
+    fi
+
+    output="$output\nused volumes:   "
+    if [ "$volumes" != "" ]; then
+        local firstVolume=true
+        while read -r volume; do
+            local volume=($volume)
+            ! $firstVolume && output="$output                "
+            output="$output- ${volume[0]} -> ${volume[1]}\n"
+            firstVolume=false
+        done <<< "$volumes"
+    else
+        output="${output}no volume is used\n"
+    fi
+
+    echo -e "$output"
 }
 
 
