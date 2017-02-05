@@ -1,0 +1,339 @@
+#!/bin/bash
+
+# some vars
+       pathRoot="$(dirname "$(readlink -f "$0")")"
+        pathLib="$pathRoot/../lib"
+     configPath=$(pwd)
+containerFolder="containers"
+    usageString="Usage $0 [container-name] [start|restart|stop|remove|status|login|exec|reinit]"
+    actionArray=(start run restart stop remove status login exec reinit)
+
+# add all lib sources
+source "$pathLib/all"
+
+# initial values
+DEBUG=false
+
+# declare parameter list array
+PARAMETERS=()
+
+# read arguments
+while [[ $# > 0 ]]; do
+  case "$1" in
+    #
+    # log option (2 parameter)
+    #
+    -d|--debug)
+      DEBUG=true
+    ;;
+    -d=*|--debug=*)
+      DEBUG="${1#*=}"
+      [ "$DEBUG" = "0" ] && DEBUG=false || DEBUG=true
+    ;;
+
+    #
+    # collect these unknown parameters
+    #
+    *)
+      PARAMETERS+=("$1")
+    ;;
+
+  esac
+  shift
+done
+
+# check if parameter container is given
+if [ "${#PARAMETERS[@]}" -lt 1 ]; then
+    log 'error' "No mount container name was given. $usageString"
+    log 'info'  "Possible container-names:"
+
+    for file in $configPath/$containerFolder/*; do
+        log 'info'  "  - "$(basename "$file")
+    done
+
+    exit 1
+fi
+
+# check if parameter action is given
+if [ "${#PARAMETERS[@]}" -lt 2 ]; then
+  log 'error' "No action type was given. $usageString" && exit 1
+fi
+
+# build container name and path
+containerName="${PARAMETERS[0]}"
+containerPath="$configPath/$containerFolder/$containerName"
+       action="${PARAMETERS[1]}"
+
+# check if container folder exists
+if [ ! -d "$containerPath" ]; then
+  log 'error' "Container folder \"$containerPath\" was not found. Check it" && exit 1
+fi
+
+# check the action type
+if ! inArray "actionArray" "$action"; then
+  log 'error' "The given action type is unknown. $usageString" && exit 1
+fi
+
+# check other parameters
+case $action in
+    exec)
+        if [ "${#PARAMETERS[@]}" -lt 3 ]; then
+            log 'error' "No execute command was given. Abort." && exit 1
+        fi
+
+        command="${PARAMETERS[2]}"
+    ;;
+esac
+
+# login function
+login ()
+{
+    local containerName="$1"
+
+    # get docker container status
+    local statusContainer=$(status "$containerName")
+
+    if [ "$statusContainer" != "running" ]; then
+        log 'warning' "It is not possible to login into container \"$containerName\" because it is not running. Status: $statusContainer" && return 1
+    fi
+
+    # log in
+    docker exec -it "$containerName" bash
+    return 0
+}
+
+# remove function
+remove ()
+{
+    local containerName="$1"
+
+    # get docker container status
+    local statusContainer=$(status "$containerName")
+
+    case "$statusContainer" in
+        # docker container is already running
+        running)
+            local result=$(docker rm -f "$containerName")
+            ;;
+
+        exited)
+            local result=$(docker rm "$containerName")
+            ;;
+
+        paused)
+            local result=$(docker rm "$containerName")
+            ;;
+
+        nonexistent)
+            log 'info' "Docker container \"$containerName\" already removed." && return 0
+            ;;
+
+        *)
+            local result=$(docker rm "$containerName")
+            ;;
+    esac
+
+    # get docker container status
+    local statusContainer=$(status "$containerName")
+
+    if [ "$statusContainer" != "nonexistent" ]; then
+        log 'error' "Docker container \"$containerName\" was not successfully removed." && return 1
+    fi
+
+    # success
+    log 'success' "Docker container \"$containerName\" was successfully removed."
+    return 0
+}
+
+# restart function
+restart ()
+{
+    local containerName="$1"
+
+    # stop, remove and start container
+    stop "$containerName"
+    remove "$containerName"
+    start "$containerName"
+}
+
+# status function
+status ()
+{
+    local containerName="$1"
+
+    # get status (created, restarting, running, paused, exited, dead)
+    local statusContainer=$(docker inspect -f '{{ .State.Status }}' "$containerName" 2>/dev/null)
+
+    # last status
+    local statusCommand=$?
+
+    if [ "$statusContainer" == "" ]; then
+        echo "nonexistent"
+    else
+        echo "$statusContainer"
+    fi
+}
+
+# start function
+start ()
+{
+    local containerName="$1"
+
+    # get docker container status
+    local statusContainer=$(status "$containerName")
+
+    case "$statusContainer" in
+        running)
+            log 'info' "Docker container \"$containerName\" is already running" && return 0
+            ;;
+
+        exited)
+            log 'info' "Start docker container \"$containerName\"."
+
+            startContainer "$containerName"
+            executeScript  "$configPath/$containerFolder/$containerName/start"
+            ;;
+
+        paused)
+            log 'info' "Unpause docker container \"$containerName\"."
+
+            unpauseContainer "$containerName"
+            ;;
+
+        nonexistent)
+            log 'info' "Start docker container \"$containerName\"."
+
+            createContainer "$containerName"
+            executeScript   "$configPath/$containerFolder/$containerName/start"
+            ;;
+
+        *)
+            log 'error' "Unknown container status \"$statusContainer\"." && exit
+            ;;
+    esac
+
+    # get docker container status
+    local statusContainer=$(status "$containerName")
+
+    if [ "$statusContainer" != "running" ]; then
+        log 'error' "Error occurred while starting the container \"$containerName\"."
+    fi
+
+    log 'success' "Container \"$containerName\" was successfully started."
+}
+
+# stop function
+stop ()
+{
+    local containerName="$1"
+
+    stopContainer "$containerName"
+
+    # get docker container status
+    local statusContainer=$(status "$containerName")
+
+    if [ "$statusContainer" != "exited" ]; then
+        log 'error' "Error occurred while stoping the container \"$containerName\"."
+    fi
+
+    log 'success' "Container \"$containerName\" was successfully stopped."
+}
+
+# exec function
+execute ()
+{
+    local containerName="$1"
+    local command="$2"
+
+    # get docker container status
+    local statusContainer=$(status "$containerName")
+
+    if [ "$statusContainer" != "running" ]; then
+        log 'warning' "It is not possible to login into container \"$containerName\" because it is not running. Status: $statusContainer" && return 1
+    fi
+
+    # execute command
+    docker exec "$containerName" $command
+    return 0
+}
+
+# reinitialize function
+reinit ()
+{
+    local containerName="$1"
+
+    # get docker container status
+    local statusContainer=$(status "$containerName")
+
+    if [ "$statusContainer" != "running" ]; then
+        log 'warning' "It is not possible to login into container \"$containerName\" because it is not running. Status: $statusContainer" && return 1
+    fi
+
+    local reinitFile="$containerPath/reinit"
+
+    # check if reinitialize file exists
+    if [ ! -f "$reinitFile" ]; then
+        log 'warning' "Reinitialize file \"$reinitFile\" was not found. Abort." && return 1
+    fi
+
+    local reinitScript=$(cat "$reinitFile" | head -n 1)
+
+    # check if file inside the docker container exists
+    fileExists=$(docker exec "$containerName" [ -f "$reinitScript" ] && echo 1 || echo 0)
+
+    if [ "$fileExists" == "0" ]; then
+        log 'warning' "Reinitialize file \"$reinitFile\" was not found inside the docker machine. Abort." && return 1
+    fi
+
+    # check if file inside the docker container is executable
+    fileExecutable=$(docker exec "$containerName" [ -x "$reinitScript" ] && echo 1 || echo 0)
+
+    if [ "$fileExecutable" == "0" ]; then
+        log 'warning' "Reinitialize file \"$reinitFile\" is not executable inside the docker machine. Abort." && return 1
+    fi
+
+    # call reinit script
+    docker exec "$containerName" "$reinitScript"
+    return 0
+}
+
+# do the stuff
+case $action in
+    login)
+        login "$containerName"
+        ;;
+
+    remove)
+        remove "$containerName"
+        ;;
+
+    restart)
+        restart "$containerName"
+        ;;
+
+    run)
+        start "$containerName"
+        ;;
+
+    start)
+        start "$containerName"
+        ;;
+
+    status)
+        status "$containerName"
+        ;;
+
+    stop)
+        stop "$containerName"
+        ;;
+
+    exec)
+        execute "$containerName" "$command"
+        ;;
+
+    reinit)
+        reinit "$containerName"
+        ;;
+esac
+
+

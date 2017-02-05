@@ -1,0 +1,110 @@
+#!/bin/bash
+
+# some vars
+   pathRoot="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    pathLib="$pathRoot/../lib"
+ configPath="/home/bjoern/simply-docker"
+imageFolder="images"
+usageString="Usage $0 [image-name] [build|remove]"
+actionArray=(build remove)
+
+# add all lib sources
+source "$pathLib/all"
+
+# check if parameter image is given
+if [ "$#" -lt 1 ]; then
+    log 'error' "No image name was given. $usageString"
+    log 'info'  "Possible image-names:"
+
+    for file in $configPath/$imageFolder/*; do
+        log 'info'  "  - "$(basename "$file")
+    done
+
+    exit 1
+fi
+
+# check if parameter action is given
+if [ "$#" -lt 2 ]; then
+  log 'error' "No action type was given. $usageString" && exit 1
+fi
+
+# build image name and path
+imageName="$1"
+imagePath="$configPath/$imageFolder/$imageName"
+   action="$2"
+
+# check if image folder exists
+if [ ! -d "$imagePath" ]; then
+  log 'error' "Image folder \"$imagePath\" was not found. Check it" && exit 1
+fi
+
+# check the action type
+if ! inArray "actionArray" "$action"; then
+  log 'error' "The given action type is unknown. $usageString" && exit 1
+fi
+
+# build image
+build ()
+{
+    local imagePath="$1"
+    local imageName=$(basename "$imagePath")
+
+    # check if docker image already exists
+    if dockerImageExists "$imageName"; then
+        log 'info' "Docker image \"$imageName\" already exists. Stop." && return 1
+    fi
+
+    if [ ! -f "$imagePath/Dockerfile.part" ]; then
+        log 'error' "Dockerfile part file \"$imagePath/Dockerfile.part\" was not found." && exit 1
+    fi
+
+    local baseImagePath=$(readlink -f "$imagePath/image")
+    local baseImageName=$(basename "$baseImagePath")
+
+    # create Dockerfile
+    echo -e "FROM $baseImageName\n" > "$imagePath/Dockerfile"
+    cat "$imagePath/Dockerfile.part" >> "$imagePath/Dockerfile"
+
+    # build image
+    cd "$imagePath"
+    docker build -t $imageName .
+
+    # check if docker image exists
+    if ! dockerImageExists "$imageName"; then
+        log 'error' "Docker image \"$imageName\" was not successfully created." && return 1
+    fi
+
+    log 'success' "Docker image \"$imageName\" was successfully created." && return 0
+}
+
+# remove image
+remove ()
+{
+    local imageName="$1"
+
+    # check if docker image already exists
+    if ! dockerImageExists "$imageName"; then
+        log 'info' "Docker image \"$imageName\" does not exist. Stop." && return 1
+    fi
+
+    result=$(docker rmi $imageName)
+
+    # check if docker image exists
+    if dockerImageExists "$imageName"; then
+        log 'error' "Docker image \"$imageName\" was not successfully removed." && return 1
+    fi
+
+    log 'success' "Docker image \"$imageName\" was successfully removed." && return 0
+}
+
+# do the stuff
+case $action in
+    build)
+        build "$imagePath"
+    ;;
+
+    remove)
+        remove "$imageName"
+    ;;
+esac
+

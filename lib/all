@@ -1,0 +1,20 @@
+#!/bin/bash
+
+# some vars
+pathRoot="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# include the sources
+source "$pathRoot/array"
+source "$pathRoot/date"
+source "$pathRoot/device"
+source "$pathRoot/docker"
+source "$pathRoot/file"
+source "$pathRoot/filesystem"
+source "$pathRoot/general"
+source "$pathRoot/mail"
+source "$pathRoot/network"
+source "$pathRoot/screen"
+source "$pathRoot/string"
+source "$pathRoot/system"
+
+
