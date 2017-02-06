@@ -83,7 +83,7 @@ fi
 
 # check if parameter action is given
 if [ "${#PARAMETERS[@]}" -lt 2 ]; then
-  log 'error' "No action type was given. $usageString" && exit 1
+    log 'error' "No action type was given. $usageString" && exit 1
 fi
 
 # build container name and path
@@ -92,13 +92,13 @@ containerPath="$configPath/$containerFolder/$containerName"
        action="${PARAMETERS[1]}"
 
 # check if container folder exists
-if [ ! -d "$containerPath" ]; then
-  log 'error' "Container folder \"$containerPath\" was not found. Check it" && exit 1
+if [ "$containerName" != "all" ] && [ ! -d "$containerPath" ]; then
+    log 'error' "Container folder \"$containerPath\" was not found. Check it" && exit 1
 fi
 
 # check the action type
 if ! inArray "actionArray" "$action"; then
-  log 'error' "The given action type is unknown. $usageString" && exit 1
+    log 'error' "The given action type is unknown. $usageString" && exit 1
 fi
 
 # check other parameters
@@ -317,6 +317,49 @@ reinit ()
     docker exec "$containerName" "$reinitScript"
     return 0
 }
+
+# get status from all containers
+statusAll ()
+{
+    local full="${2:-0}"
+    local json="${3:-0}"
+
+    local counter=1
+
+    echo
+
+    for file in $configPath/$containerFolder/*; do
+        local containerName=$(basename "$file")
+
+        local caption="$counter) $containerName"
+        local captionLength=${#caption}
+
+        echo "$counter) $containerName"
+        eval "printf '=%.0s' {1..$captionLength}"
+        echo
+
+        statusContainer=$(status "$containerName" "$full" "$json")
+
+        echo -e "$statusContainer"
+        echo ""
+
+        counter=$((counter+1)) 
+    done
+}
+
+# all containers
+if [ "$containerName" == "all" ]; then
+    case $action in
+        status)
+            $FULL && fullParameter=1 || fullParameter=0
+            $JSON && jsonParameter=1 || jsonParameter=0
+
+            statusAll "$fullParameter" "$jsonParameter"
+            ;;
+    esac
+    exit 0
+fi
+
 
 # do the stuff
 case $action in
