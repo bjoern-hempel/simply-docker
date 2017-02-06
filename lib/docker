@@ -228,6 +228,7 @@ getDockerContainerInfo ()
     local containerName="$1"
     local full="${2:-0}"
     local json="${3:-0}"
+    local prefix="${4:-}"
 
     [ "$full" == "0" ] && full=false || full=true
     [ "$json" == "0" ] && json=false || json=true
@@ -242,8 +243,8 @@ getDockerContainerInfo ()
     if ! $full; then
         if $json; then
             echo "{"
-            echo "    \"status\": \"$statusContainer\""
-            echo "}"
+            echo "$prefix    \"status\": \"$statusContainer\""
+            echo "$prefix}"
             return 0
         else
             echo "$statusContainer" && return 0
@@ -265,62 +266,62 @@ getDockerContainerInfo ()
     # print full json status of container
     if $json; then
         echo    "{"
-        echo    "    \"container-name\":       \"$name\","
-        echo    "    \"container-id\":         \"$id\","
-        echo    "    \"status\":               \"$statusContainer\","
-        echo    "    \"created-at\":           \"$createdAt\","
-        echo    "    \"created-at-timestamp\": \"$createdAtTimestamp\","
-        echo    "    \"started-at\":           \"$startedAt\","
-        echo    "    \"started-at-timestamp\": \"$startedAtTimestamp\","
-        echo    "    \"ip-address\":           \"$ip\","
+        echo    "$prefix    \"container-name\":       \"$name\","
+        echo    "$prefix    \"container-id\":         \"$id\","
+        echo    "$prefix    \"status\":               \"$statusContainer\","
+        echo    "$prefix    \"created-at\":           \"$createdAt\","
+        echo    "$prefix    \"created-at-timestamp\": \"$createdAtTimestamp\","
+        echo    "$prefix    \"started-at\":           \"$startedAt\","
+        echo    "$prefix    \"started-at-timestamp\": \"$startedAtTimestamp\","
+        echo    "$prefix    \"ip-address\":           \"$ip\","
 
-        echo -n "    \"used-ports\":           {"
+        echo -n "$prefix    \"used-ports\":           {"
         if [ "$ports" != "" ]; then
             local firstPort=true
             while read -r port; do
                 local port=($port)
                 $firstPort && echo "" || echo ","
-                echo -n "                                \"${port[0]}\": \"${port[1]}\""
+                echo -n "$prefix                                \"${port[0]}\": \"${port[1]}\""
                 firstPort=false
             done <<< "$ports"
-            echo -e "\n                            },"
+            echo -e "\n$prefix                            },"
         else
-            echo "},"
+            echo "$prefix},"
         fi
 
-        echo -n "    \"used-volumes\":         {"
+        echo -n "$prefix    \"used-volumes\":         {"
         if [ "$volumes" != "" ]; then
             local firstVolume=true
             while read -r volume; do
                 local volume=($volume)
                 $firstVolume && echo "" || echo ","
-                echo -n "                                \"${volume[0]}\": \"${volume[1]}\""
+                echo -n "$prefix                                \"${volume[0]}\": \"${volume[1]}\""
                 firstVolume=false
             done <<< "$volumes"
-            echo -e "\n                            },"
+            echo -e "\n$prefix                            },"
         else
-            echo "},"
+            echo "$prefix},"
         fi
-        echo "    \"start-script\":         \"$startScript\","
-        echo "    \"login-command\":        \"$ docker exec -it $name bash\""
-        echo "}"
+        echo "$prefix    \"start-script\":         \"$startScript\","
+        echo "$prefix    \"login-command\":        \"$ docker exec -it $name bash\""
+        echo "$prefix}"
         return 0
     fi
 
     # print full output
-             output="container name: $name"
-    output="$output\ncontainer id:   $id"
-    output="$output\nstatus:         $statusContainer"
-    output="$output\ncreated at:     $createdAt"
-    output="$output\nstarted at:     $startedAt"
-    output="$output\nip address:     $ip"
+             output="${prefix}container name: $name"
+    output="$output\n${prefix}container id:   $id"
+    output="$output\n${prefix}status:         $statusContainer"
+    output="$output\n${prefix}created at:     $createdAt"
+    output="$output\n${prefix}started at:     $startedAt"
+    output="$output\n${prefix}ip address:     $ip"
 
-    output="$output\nused ports:     "
+    output="$output\n${prefix}used ports:     "
     if [ "$ports" != "" ]; then
         local firstPort=true
         while read -r port; do
             local port=($port)
-            ! $firstPort && output="$output\n                "
+            ! $firstPort && output="$output\n${prefix}                "
             output="$output- ${port[0]} -> ${port[1]}"
             firstPort=false
         done <<< "$ports"
@@ -328,20 +329,20 @@ getDockerContainerInfo ()
         output="${output}no port is used"
     fi
 
-    output="$output\nused volumes:   "
+    output="$output\n${prefix}used volumes:   "
     if [ "$volumes" != "" ]; then
         local firstVolume=true
         while read -r volume; do
             local volume=($volume)
-            ! $firstVolume && output="$output                "
-            output="$output- ${volume[0]} -> ${volume[1]}\n"
+            ! $firstVolume && output="$output\n${prefix}                "
+            output="$output- ${volume[0]} -> ${volume[1]}"
             firstVolume=false
         done <<< "$volumes"
     else
         output="${output}no volume is used\n"
     fi
 
-    echo -e "$output"
+    echo -en "$output"
 }
 
 

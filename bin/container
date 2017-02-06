@@ -189,8 +189,9 @@ status ()
     local containerName="$1"
     local full="${2:-0}"
     local json="${3:-0}"
+    local prefix="${4:-}"
 
-    local containerInfo=$(getDockerContainerInfo "$containerName" "$full" "$json")
+    local containerInfo=$(getDockerContainerInfo "$containerName" "$full" "$json" "$prefix")
 
     echo -e "$containerInfo"
 }
@@ -321,30 +322,56 @@ reinit ()
 # get status from all containers
 statusAll ()
 {
-    local full="${2:-0}"
-    local json="${3:-0}"
+    local full="${1:-0}"
+    local json="${2:-0}"
 
     local counter=1
 
-    echo
+    local prefix=""
+    if [ "$json" != "0" ]; then
+        prefix="    "
+        echo "{"
+    else
+        prefix="    "
+        echo ""
+    fi
+
 
     for file in $configPath/$containerFolder/*; do
         local containerName=$(basename "$file")
 
-        local caption="$counter) $containerName"
-        local captionLength=${#caption}
+        if [ "$json" == "0" ]; then
+            local caption="$counter) $containerName"
+            local captionLength=${#caption}
 
-        echo "$counter) $containerName"
-        eval "printf '=%.0s' {1..$captionLength}"
-        echo
+            echo ""
+            echo "$counter) $containerName"
+            eval "printf '=%.0s' {1..$captionLength}"
+            echo
+        else
+            if [ "$counter" != "1" ]; then
+                echo ","
+            fi
+            echo -n "    \"$containerName\": "
+        fi
 
-        statusContainer=$(status "$containerName" "$full" "$json")
+        statusContainer=$(status "$containerName" "$full" "$json" "$prefix")
 
-        echo -e "$statusContainer"
-        echo ""
+        echo -en "$statusContainer"
 
-        counter=$((counter+1)) 
+        if [ "$json" == "0" ]; then
+            echo ""
+        fi
+
+        counter=$((counter+1))
     done
+
+    if [ "$json" != "0" ]; then
+        echo ""
+        echo "}"
+    else
+        echo ""
+    fi
 }
 
 # all containers
