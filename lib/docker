@@ -436,15 +436,18 @@ createContainer ()
     fi
 
     # check ports
-    declare -a ports
+    declare -A ports
     if [ -d "$portsFolder" ]; then
         for fileSource in $(find "$portsFolder" -type l); do
             local fileTarget=$(readlink -f "$fileSource")
 
-            local containerPort=$(basename "$fileSource")
-            local      hostPort=$(basename "$fileTarget")
+            local      hostPort=$(basename "$fileSource")
+            local containerPort=$(basename "$fileTarget")
 
-            ports[$containerPort]=$hostPort
+            # replace . to /
+            hostPort=${hostPort//./\/}
+
+            ports[$hostPort]=$containerPort
         done
     fi
 
@@ -509,7 +512,7 @@ createContainer ()
     for containerPort in "${!ports[@]}"; do
         local hostPort=${ports[$containerPort]}
 
-        command="$command -p $containerPort:$hostPort"
+        command="$command -p $hostPort:$containerPort"
     done
 
     # add volume to command
