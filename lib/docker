@@ -273,11 +273,13 @@ getDockerContainerInfo ()
 {
     local containerName="$1"
     local full="${2:-0}"
+    local fullReally="${2:-0}"
     local json="${3:-0}"
     local prefix="${4:-}"
 
-    [ "$full" == "0" ] && full=false || full=true
-    [ "$json" == "0" ] && json=false || json=true
+    [ "$full"       == "0" ] && full=false       || full=true
+    [ "$fullReally" == "0" ] && fullReally=false || fullReally=true
+    [ "$json"       == "0" ] && json=false       || json=true
 
     # get status (created, restarting, running, paused, exited, dead)
     local statusContainer=$(getDockerContainerStatus "$containerName")
@@ -293,7 +295,13 @@ getDockerContainerInfo ()
             echo "$prefix}"
             return 0
         else
-            echo "$statusContainer" && return 0
+            if $fullReally; then
+                statusContainer=$(formatStatus "$statusContainer")
+
+                echo "${prefix}${COLOR_BOLD}${COLOR_LBLUE}status:        ${COLOR_NORM} $statusContainer" && return 0
+            else
+                echo "$statusContainer" && return 0
+            fi
         fi
     fi
 
