@@ -226,33 +226,39 @@ formatStatus()
 {
     local statusContainer="$1"
 
-    case "$statusContainer" in
+    local length=${#statusContainer}
+    local addLength=$((12-$length))
+
+    local statusContainerReal=$statusContainer
+    statusContainer="$statusContainer"$(eval "printf ' %.0s' {1..$addLength}")
+
+    case "$statusContainerReal" in
         running)
-            statusContainer="${COLOR_BOLD}${COLOR_LGREEN}[ $statusContainer ]${COLOR_NORM}"
+            statusContainer="${COLOR_BOLD}${COLOR_LGREEN}[ $statusContainer]${COLOR_NORM}"
             ;;
 
         created)
-            statusContainer="${COLOR_BOLD}${COLOR_LYELLOW}[ ${COLOR_BLINK}$statusContainer${COLOR_NORM}${COLOR_BOLD}${COLOR_LYELLOW} ]${COLOR_NORM}"
+            statusContainer="${COLOR_BOLD}${COLOR_LYELLOW}[ ${COLOR_BLINK}$statusContainer${COLOR_NORM}${COLOR_BOLD}${COLOR_LYELLOW}]${COLOR_NORM}"
             ;;
 
         restarting)
-            statusContainer="${COLOR_BOLD}${COLOR_LYELLOW}[ $statusContainer ]${COLOR_NORM}"
+            statusContainer="${COLOR_BOLD}${COLOR_LYELLOW}[ $statusContainer]${COLOR_NORM}"
             ;;
 
         paused)
-            statusContainer="${COLOR_BOLD}${COLOR_LYELLOW}[ ${COLOR_BLINK}$statusContainer${COLOR_NORM}${COLOR_BOLD}${COLOR_LYELLOW} ]${COLOR_NORM}"
+            statusContainer="${COLOR_BOLD}${COLOR_LYELLOW}[ ${COLOR_BLINK}$statusContainer${COLOR_NORM}${COLOR_BOLD}${COLOR_LYELLOW}]${COLOR_NORM}"
             ;;
 
         exited)
-            statusContainer="${COLOR_BOLD}${COLOR_LRED}[ ${COLOR_BLINK}$statusContainer${COLOR_NORM}${COLOR_BOLD}${COLOR_LRED} ]${COLOR_NORM}"
+            statusContainer="${COLOR_BOLD}${COLOR_LRED}[ ${COLOR_BLINK}$statusContainer${COLOR_NORM}${COLOR_BOLD}${COLOR_LRED}]${COLOR_NORM}"
             ;;
 
         dead)
-            statusContainer="${COLOR_BOLD}${COLOR_LRED}[ ${COLOR_BLINK}$statusContainer${COLOR_NORM}${COLOR_BOLD}${COLOR_LRED} ]${COLOR_NORM}"
+            statusContainer="${COLOR_BOLD}${COLOR_LRED}[ ${COLOR_BLINK}$statusContainer${COLOR_NORM}${COLOR_BOLD}${COLOR_LRED}]${COLOR_NORM}"
             ;;
 
         nonexistent)
-            statusContainer="${COLOR_BOLD}${COLOR_LRED}[ ${COLOR_BLINK}$statusContainer${COLOR_NORM}${COLOR_BOLD}${COLOR_LRED} ]${COLOR_NORM}"
+            statusContainer="${COLOR_BOLD}${COLOR_LRED}[ ${COLOR_BLINK}$statusContainer${COLOR_NORM}${COLOR_BOLD}${COLOR_LRED}]${COLOR_NORM}"
             ;;
     esac
 
