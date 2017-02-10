@@ -215,6 +215,52 @@ getDockerContainerVolumes ()
 
 
 
+# ------------
+# Formats the status code
+#
+# @author  Björn Hempel
+# @version 1.0
+# @date    2017-02-09
+# ------------
+formatStatus()
+{
+    local statusContainer="$1"
+
+    case "$statusContainer" in
+        running)
+            statusContainer="${COLOR_BOLD}${COLOR_LGREEN}[ $statusContainer ]${COLOR_NORM}"
+            ;;
+
+        created)
+            statusContainer="${COLOR_BOLD}${COLOR_LYELLOW}[ ${COLOR_BLINK}$statusContainer${COLOR_NORM}${COLOR_BOLD}${COLOR_LYELLOW} ]${COLOR_NORM}"
+            ;;
+
+        restarting)
+            statusContainer="${COLOR_BOLD}${COLOR_LYELLOW}[ $statusContainer ]${COLOR_NORM}"
+            ;;
+
+        paused)
+            statusContainer="${COLOR_BOLD}${COLOR_LYELLOW}[ ${COLOR_BLINK}$statusContainer${COLOR_NORM}${COLOR_BOLD}${COLOR_LYELLOW} ]${COLOR_NORM}"
+            ;;
+
+        exited)
+            statusContainer="${COLOR_BOLD}${COLOR_LRED}[ ${COLOR_BLINK}$statusContainer${COLOR_NORM}${COLOR_BOLD}${COLOR_LRED} ]${COLOR_NORM}"
+            ;;
+
+        dead)
+            statusContainer="${COLOR_BOLD}${COLOR_LRED}[ ${COLOR_BLINK}$statusContainer${COLOR_NORM}${COLOR_BOLD}${COLOR_LRED} ]${COLOR_NORM}"
+            ;;
+
+        nonexistent)
+            statusContainer="${COLOR_BOLD}${COLOR_LRED}[ ${COLOR_BLINK}$statusContainer${COLOR_NORM}${COLOR_BOLD}${COLOR_LRED} ]${COLOR_NORM}"
+            ;;
+    esac
+
+    echo -n "$statusContainer"
+}
+
+
+
 
 # ------------
 # Returns the container status
@@ -308,15 +354,17 @@ getDockerContainerInfo ()
         return 0
     fi
 
-    # print full output
-             output="${prefix}container name: $name"
-    output="$output\n${prefix}container id:   $id"
-    output="$output\n${prefix}status:         $statusContainer"
-    output="$output\n${prefix}created at:     $createdAt"
-    output="$output\n${prefix}started at:     $startedAt"
-    output="$output\n${prefix}ip address:     $ip"
+    statusContainer=$(formatStatus "$statusContainer")
 
-    output="$output\n${prefix}used ports:     "
+    # print full output
+             output="${prefix}${COLOR_BOLD}${COLOR_LBLUE}container name:${COLOR_NORM} $name"
+    output="$output\n${prefix}${COLOR_BOLD}${COLOR_LBLUE}container id:  ${COLOR_NORM} $id"
+    output="$output\n${prefix}${COLOR_BOLD}${COLOR_LBLUE}status:        ${COLOR_NORM} $statusContainer"
+    output="$output\n${prefix}${COLOR_BOLD}${COLOR_LBLUE}created at:    ${COLOR_NORM} $createdAt"
+    output="$output\n${prefix}${COLOR_BOLD}${COLOR_LBLUE}started at:    ${COLOR_NORM} $startedAt"
+    output="$output\n${prefix}${COLOR_BOLD}${COLOR_LBLUE}ip address:    ${COLOR_NORM} $ip"
+
+    output="$output\n${prefix}${COLOR_BOLD}${COLOR_LBLUE}used ports:    ${COLOR_NORM} "
     if [ "$ports" != "" ]; then
         local firstPort=true
         while read -r port; do
@@ -329,7 +377,7 @@ getDockerContainerInfo ()
         output="${output}no port is used"
     fi
 
-    output="$output\n${prefix}used volumes:   "
+    output="$output\n${prefix}${COLOR_BOLD}${COLOR_LBLUE}used volumes:  ${COLOR_NORM} "
     if [ "$volumes" != "" ]; then
         local firstVolume=true
         while read -r volume; do

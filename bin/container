@@ -343,11 +343,17 @@ statusAll ()
         if [ "$json" == "0" ]; then
             local caption="$counter) $containerName"
             local captionLength=${#caption}
+            local addCaptionLength=$((30-$captionLength))
 
-            echo ""
-            echo "$counter) $containerName"
-            eval "printf '=%.0s' {1..$captionLength}"
-            echo
+            if [ "$full" == "0" ]; then
+                echo -n "$containerName:"
+                eval "printf ' %.0s' {1..$addCaptionLength}"
+            else
+                echo ""
+                echo "$counter) $containerName"
+                eval "printf '=%.0s' {1..$captionLength}"
+                echo
+            fi
         else
             if [ "$counter" != "1" ]; then
                 echo ","
@@ -356,6 +362,8 @@ statusAll ()
         fi
 
         statusContainer=$(status "$containerName" "$full" "$json" "$prefix")
+
+        statusContainer=$(formatStatus "$statusContainer")
 
         echo -en "$statusContainer"
 

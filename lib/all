@@ -5,6 +5,7 @@ pathRoot="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # include the sources
 source "$pathRoot/array"
+source "$pathRoot/color"
 source "$pathRoot/date"
 source "$pathRoot/device"
 source "$pathRoot/docker"
