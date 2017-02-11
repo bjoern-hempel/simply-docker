@@ -278,14 +278,10 @@ formatStatus()
 getDockerContainerInfo ()
 {
     local containerName="$1"
-    local full="${2:-0}"
-    local fullReally="${2:-0}"
-    local json="${3:-0}"
+    local full=${2:-false}
+    local fullReally=${2:-false}
+    local json=${3:-false}
     local prefix="${4:-}"
-
-    [ "$full"       == "0" ] && full=false       || full=true
-    [ "$fullReally" == "0" ] && fullReally=false || fullReally=true
-    [ "$json"       == "0" ] && json=false       || json=true
 
     # get status (created, restarting, running, paused, exited, dead)
     local statusContainer=$(getDockerContainerStatus "$containerName")

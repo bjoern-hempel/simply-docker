@@ -187,11 +187,11 @@ restart ()
 status ()
 {
     local containerName="$1"
-    local full="${2:-0}"
-    local json="${3:-0}"
+    local full=${2:-false}
+    local json=${3:-false}
     local prefix="${4:-}"
 
-    local containerInfo=$(getDockerContainerInfo "$containerName" "$full" "$json" "$prefix")
+    local containerInfo=$(getDockerContainerInfo "$containerName" $full $json "$prefix")
 
     echo -e "$containerInfo"
 }
@@ -322,13 +322,12 @@ reinit ()
 # get status from all containers
 statusAll ()
 {
-    local full="${1:-0}"
-    local json="${2:-0}"
-
+    local full=${1:-false}
+    local json=${2:-false}
     local counter=1
 
     local prefix=""
-    if [ "$json" != "0" ]; then
+    if $json; then
         prefix="    "
         echo "{"
     else
@@ -336,20 +335,19 @@ statusAll ()
         echo ""
     fi
 
-
     for file in $configPath/$containerFolder/*; do
         local containerName=$(basename "$file")
 
-        if [ "$json" == "0" ]; then
+        if ! $json; then
             local caption="$counter) $containerName"
             local captionLength=${#caption}
             local addCaptionLength=$((30-$captionLength))
 
-            if [ "$full" == "0" ]; then
+            if ! $full; then
                 echo -n "$containerName:"
                 eval "printf ' %.0s' {1..$addCaptionLength}"
             else
-                echo ""
+                echo
                 echo "$counter) $containerName"
                 eval "printf '=%.0s' {1..$captionLength}"
                 echo
@@ -361,40 +359,40 @@ statusAll ()
             echo -n "    \"$containerName\": "
         fi
 
-        statusContainer=$(status "$containerName" "$full" "$json" "$prefix")
+        statusContainer=$(status "$containerName" $full $json "$prefix")
 
-        statusContainer=$(formatStatus "$statusContainer")
+        if ! $json; then
+            if ! $full; then
+                statusContainer=$(formatStatus "$statusContainer") 
+            fi
 
-        echo -en "$statusContainer"
-
-        if [ "$json" == "0" ]; then
-            echo ""
+            echo -e "$statusContainer"
+        else
+            echo -en "$statusContainer"
         fi
 
         counter=$((counter+1))
     done
 
-    if [ "$json" != "0" ]; then
-        echo ""
-        echo "}"
+    if ! $json; then
+        echo
     else
-        echo ""
+        echo
+        echo "}"
     fi
 }
+
+
 
 # all containers
 if [ "$containerName" == "all" ]; then
     case $action in
         status)
-            $FULL && fullParameter=1 || fullParameter=0
-            $JSON && jsonParameter=1 || jsonParameter=0
-
-            statusAll "$fullParameter" "$jsonParameter"
+            statusAll $FULL $JSON
             ;;
     esac
     exit 0
 fi
-
 
 # do the stuff
 case $action in
@@ -419,10 +417,7 @@ case $action in
         ;;
 
     status)
-        $FULL && fullParameter=1 || fullParameter=0
-        $JSON && jsonParameter=1 || jsonParameter=0
-
-        status "$containerName" "$fullParameter" "$jsonParameter"
+        status "$containerName" $FULL $JSON
         ;;
 
     stop)
