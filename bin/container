@@ -339,14 +339,6 @@ reinit ()
     return 0
 }
 
-imageEnvironmentExists ()
-{
-    local            imageName="$1"
-    local imageEnvironmentPath="images/$imageName"
-
-    [ -d "$imageEnvironmentPath" ] && return 0 || return 1
-}
-
 # create function
 createEnvironmentContainer ()
 {
@@ -361,7 +353,11 @@ createEnvironmentContainer ()
     IFS=":"; read image tag <<< "$imageTagName"
 
     # try to search remote images
-    if ! imageEnvironmentExists "$imageTagName"; then
+    if imageEnvironmentExists "$imageTagName"; then
+        log 'info' "Local image \"$imageTagName\" found."
+    else
+        log 'info' "No local image \"$imageTagName\" found."
+
         remoteDockerImages=$(getRemoteDockerImages "$image")
 
         # no equal image found
@@ -371,6 +367,8 @@ createEnvironmentContainer ()
             log 'info' "$remoteDockerImages"
             return 1
         fi
+
+        log 'info' "Remote image \"$image\" found."
 
         if [ "$tag" == "" ]; then
             log 'warning' "No tag name was given"
@@ -386,6 +384,8 @@ createEnvironmentContainer ()
             log 'info' "$remoteDockerImageTags"
             return 1
         fi
+
+        log 'info' "Remote image \"$image\" and remote \"$tag\" found."
 
         imageTagName="$image:$tag"
     fi

@@ -3,6 +3,7 @@
 # ------------
 # (mstring) getRemoteDockerImages  (string) $imageSearchString
 # (mstring) getDockerImageTags     (string) $imageName
+# (bool)    imageEnvironmentExists (string) $imageName
 # ------------
 
 # ------------
@@ -40,5 +41,20 @@ getDockerImageTags ()
         awk -F\" '{print $4;}' | \
         sort -fu | \
         sed -e "s/^/${repository}:/"
+}
+
+# ------------
+# Check if image environment exists.
+#
+# @author  Björn Hempel
+# @version 1.0
+# @date    2017-02-16
+# ------------
+imageEnvironmentExists ()
+{
+    local            imageName="$1"
+    local imageEnvironmentPath="images/$imageName"
+
+    [ -d "$imageEnvironmentPath" ] && return 0 || return 1
 }
 
