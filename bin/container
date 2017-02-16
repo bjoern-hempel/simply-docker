@@ -8,8 +8,8 @@
         pathLib="$pathRoot/../lib"
      configPath=$(pwd)
 containerFolder="containers"
-    usageString="Usage $0 [container-name] [start|restart|stop|remove|status|login|exec|reinit]"
-    actionArray=(start run restart stop remove status login exec reinit)
+    usageString="Usage $0 [container-name] [start|restart|stop|remove|status|login|exec|reinit|create]"
+    actionArray=(start run restart stop remove status login exec reinit create)
 
 # add all lib sources
 source "$pathLib/all"
@@ -18,6 +18,7 @@ source "$pathLib/all"
 DEBUG=false
  FULL=false
  JSON=false
+IMAGE=""
 
 # declare parameter list array
 PARAMETERS=()
@@ -48,6 +49,13 @@ while [[ $# > 0 ]]; do
     ;;
 
     #
+    # check image parameter
+    #
+    -i=*|--image=*)
+      IMAGE="${1#*=}"
+    ;;
+
+    #
     # check json parameter
     #
     -j|--json)
@@ -69,7 +77,13 @@ while [[ $# > 0 ]]; do
   shift
 done
 
-# check if parameter container is given
+
+
+
+
+
+
+# check if parameter container is given; if not list all containers
 if [ "${#PARAMETERS[@]}" -lt 1 ]; then
     log 'error' "No mount container name was given. $usageString"
     log 'info'  "Possible container-names:"
@@ -111,6 +125,12 @@ case $action in
         command="${PARAMETERS[2]}"
     ;;
 esac
+
+
+
+
+
+
 
 # login function
 login ()
@@ -319,6 +339,61 @@ reinit ()
     return 0
 }
 
+imageEnvironmentExists ()
+{
+    local            imageName="$1"
+    local imageEnvironmentPath="images/$imageName"
+
+    [ -d "$imageEnvironmentPath" ] && return 0 || return 1
+}
+
+# create function
+createEnvironmentContainer ()
+{
+    local containerName="$1"
+    local imageTagName="$2"
+
+    if [ "$imageTagName" == "" ]; then
+        log 'error' "It is not possible to create container environment. Image option is missing: --image=ubuntu:latest" && return 1
+    fi
+
+    # split image and tag
+    IFS=":"; read image tag <<< "$imageTagName"
+
+    # try to search remote images
+    if ! imageEnvironmentExists "$imageTagName"; then
+        remoteDockerImages=$(getRemoteDockerImages "$image")
+
+        # no equal image found
+        if ! textHasEqualValue "$remoteDockerImages" "$image"; then
+            log 'info' "Given image string: \"$image\""
+            log 'info' "Please more precisely specify the image name:"
+            log 'info' "$remoteDockerImages"
+            return 1
+        fi
+
+        if [ "$tag" == "" ]; then
+            log 'warning' "No tag name was given"
+        fi
+
+        remoteDockerImageTags=$(getDockerImageTags "$image")
+
+        if ! textHasEqualValue "$remoteDockerImageTags" "$image:$tag"; then
+            if [ "$tag" != "" ]; then
+                log 'info' "Given tag string: \"$tag\""
+            fi
+            log 'info' "Please more precisely specify the tag name:"
+            log 'info' "$remoteDockerImageTags"
+            return 1
+        fi
+
+        imageTagName="$image:$tag"
+    fi
+
+    echo "create \"$containerName\" with \"$imageTagName\""
+    exit
+}
+
 # get status from all containers
 statusAll ()
 {
@@ -430,6 +505,10 @@ case $action in
 
     reinit)
         reinit "$containerName"
+        ;;
+
+    create)
+        createEnvironmentContainer "$containerName" "$IMAGE"
         ;;
 esac
 
