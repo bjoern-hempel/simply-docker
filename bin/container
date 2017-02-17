@@ -396,8 +396,13 @@ createEnvironmentContainer ()
         imageTagName="$image:$tag"
     fi
 
-    echo "create \"$containerName\" with \"$imageTagName\""
-    exit
+    mkdir "$containerFolder/$containerName"
+
+    ln -s "$imageTagName" "$containerFolder/$containerName/image"
+
+    log 'info' "Container \"$containerName\" was successfully created"
+
+    return 0
 }
 
 # get status from all containers
