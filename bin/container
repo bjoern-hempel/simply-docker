@@ -107,7 +107,9 @@ containerPath="$configPath/$containerFolder/$containerName"
 
 # check if container folder exists
 if [ "$containerName" != "all" ] && [ ! -d "$containerPath" ]; then
-    log 'error' "Container folder \"$containerPath\" was not found. Check it" && exit 1
+    if [ "$action" != "create" ]; then
+        log 'error' "Container folder \"$containerPath\" was not found. Check it" && exit 1
+    fi
 fi
 
 # check the action type
@@ -344,6 +346,10 @@ createEnvironmentContainer ()
 {
     local containerName="$1"
     local imageTagName="$2"
+
+    if containerEnvironmentExists "$containerName"; then
+        log 'error' "Container environment \"$containerName\" already exists." && return 1
+    fi
 
     if [ "$imageTagName" == "" ]; then
         log 'error' "It is not possible to create container environment. Image option is missing: --image=ubuntu:latest" && return 1
