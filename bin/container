@@ -83,8 +83,13 @@ done
 
 
 
-# check if parameter container is given; if not list all containers
+# check if parameter action is given
 if [ "${#PARAMETERS[@]}" -lt 1 ]; then
+    log 'error' "No action type was given. $usageString" && exit 1
+fi
+
+# check if parameter container is given; if not list all containers
+if [ "${#PARAMETERS[@]}" -lt 2 ]; then
     log 'error' "No mount container name was given. $usageString"
     log 'info'  "Possible container-names:"
 
@@ -95,15 +100,10 @@ if [ "${#PARAMETERS[@]}" -lt 1 ]; then
     exit 1
 fi
 
-# check if parameter action is given
-if [ "${#PARAMETERS[@]}" -lt 2 ]; then
-    log 'error' "No action type was given. $usageString" && exit 1
-fi
-
 # build container name and path
-containerName="${PARAMETERS[0]}"
+       action="${PARAMETERS[0]}"
+containerName="${PARAMETERS[1]}"
 containerPath="$configPath/$containerFolder/$containerName"
-       action="${PARAMETERS[1]}"
 
 # check if container folder exists
 if [ "$containerName" != "all" ] && [ ! -d "$containerPath" ]; then

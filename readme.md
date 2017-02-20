@@ -22,7 +22,12 @@ $ sudo ./install
 [2017-02-20 00:41:09] [SUCCESS] ┏━  The given script
                                 ┃   /home/user/simply-docker/bin/container
                                 ┗━  was successfully installed to
-$ cd ..
+```
+
+
+## Usage
+
+```
 $ mkdir docker
 $ cd docker
 $ mkdir containers
@@ -38,18 +43,11 @@ $ sd-container start ubuntu
 [2017-02-20 00:59:39] [SUCCESS] Container "ubuntu" was successfully started.
 $ sd-container status ubuntu
 running
-$ sd-container login ubuntu                                                                                                                                                    
+$ sd-container login ubuntu
 root@54034bd5f559:/# exit
 exit
-$ sd-container remove ubuntu                                                                                                                                                   
+$ sd-container remove ubuntu
 [2017-02-20 01:00:58] [SUCCESS] Docker container "ubuntu" was successfully removed.$
-```
-
-
-## Usage
-
-```
-TODO
 ```
 
 ## License

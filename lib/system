@@ -11,35 +11,35 @@
 installApp()
 {
     sourceFile="$1"
-    targetPath="$2"
-    basename=$(basename "$sourceFile")
-    targetFile="$targetPath/$basename"
+    targetFile="$2"
+
     # inform the user
     log "info" "Try to install the given script\n$sourceFile to\n$targetFile."
+
     # check the given source file
     if [ ! -f "$sourceFile" ]; then
         log "error" "The given install file\n$sourceFile does not exist."
         return 1
     fi
-    # check the target path
-    if [ ! -d "$targetPath" ]; then
-        log "error" "The given target path\n$targetPath is not a directory or does not exist."
-        return 1
-    fi
+
     # check if the target file already exists
     if [ -f "$targetFile" ]; then
         log "info" "The target file\n$targetFile already exists."
         return 0
     fi
+
     # try to install the app
     ln -s "$sourceFile" "$targetFile"
+
     # error while installing pub deploy script
     if [ ! -f "$targetFile" ]; then
         log "error" "An error occurred while installing the given script\n$sourceFile\nto $targetPath"
         return 1
     fi
+
     # change permissions
     chmod 775 "$targetFile"
+
     # return true
     log "success" "The given script\n$sourceFile\nwas successfully installed to $targetPath"
     return 0

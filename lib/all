@@ -1,23 +1,24 @@
 #!/bin/bash
 
 # some vars
-pathRoot="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+pathLib="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # include the sources
-source "$pathRoot/array"
-source "$pathRoot/color"
-source "$pathRoot/date"
-source "$pathRoot/device"
-source "$pathRoot/docker"
-source "$pathRoot/docker-container"
-source "$pathRoot/docker-image"
-source "$pathRoot/file"
-source "$pathRoot/filesystem"
-source "$pathRoot/general"
-source "$pathRoot/mail"
-source "$pathRoot/network"
-source "$pathRoot/screen"
-source "$pathRoot/string"
-source "$pathRoot/system"
+source "$pathLib/array"
+source "$pathLib/color"
+source "$pathLib/date"
+source "$pathLib/device"
+source "$pathLib/docker"
+source "$pathLib/docker-container"
+source "$pathLib/docker-image"
+source "$pathLib/file"
+source "$pathLib/filesystem"
+source "$pathLib/general"
+source "$pathLib/install"
+source "$pathLib/mail"
+source "$pathLib/network"
+source "$pathLib/screen"
+source "$pathLib/string"
+source "$pathLib/system"
 
 
