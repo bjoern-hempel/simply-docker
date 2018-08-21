@@ -69,7 +69,14 @@ user$ sd-container start ixno.apache.php7
 [2018-08-13 08:30:13] [SUCCESS] Container "ixno.apache.php7" was successfully started.
 ```
 
-## License
+## A. Authors
 
-ISC © [Björn Hempel](https://www.ixno.de)
-# 
+* Björn Hempel <bjoern@hempel.li> - _Initial work_ - [https://github.com/bjoern-hempel](https://github.com/bjoern-hempel)
+
+## B. Licence
+
+This tutorial is licensed under the MIT License - see the [LICENSE.md](/LICENSE.md) file for details
+
+## C. Closing words
+
+Have fun! :)
